@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat with AI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        #model-select {
+            margin-bottom: 20px;
+            padding: 5px;
+            font-size: 16px;
+        }
+        .chat-box {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            padding: 15px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        .message {
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .user-bubble {
+            align-self: flex-end;
+            background-color: #0084ff;
+            color: white;
+            padding: 10px;
+            border-radius: 10px 0 10px 10px;
+            max-width: 80%;
+        }
+        .bot-bubble {
+            align-self: flex-start;
+            background-color: #e5e5ea;
+            padding: 10px;
+            border-radius: 0 10px 10px 10px;
+            max-width: 80%;
+        }
+        .input-area {
+            display: flex;
+            width: 100%;
+            max-width: 600px;
+        }
+        #message {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px 0 0 5px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #006fd6;
+        }
+        .typing {
+            font-style: italic;
+            color: gray;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Chat with AI</h2>
+
+    <select id="model-select">
+        {% for model in models %}
+            <option value="{{ model }}">{{ model }}</option>
+        {% endfor %}
+    </select>
+
+    <div class="chat-box" id="chat-box"></div>
+
+    <div class="input-area">
+        <input type="text" id="message" placeholder="Type your message..." autocomplete="off">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const input = document.getElementById("message");
+        const chatBox = document.getElementById("chat-box");
+
+        input.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        async function sendMessage() {
+            const message = input.value.trim();
+            const model = document.getElementById("model-select").value;
+
+            if (!message) return;
+
+            // Add user message
+            chatBox.innerHTML += `<div class="message"><div class="user-bubble">${message}</div></div>`;
+            input.value = "";
+
+            // Show typing indicator
+            const typingId = `typing-${Date.now()}`;
+            chatBox.innerHTML += `<div class="message typing" id="${typingId}">AI is typing...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Send request
+            const response = await fetch("/ask", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({message: message, model: model})
+            });
+
+            const data = await response.json();
+
+            // Remove typing and show AI reply
+            document.getElementById(typingId).remove();
+            chatBox.innerHTML += `<div class="message"><div class="bot-bubble">${data.reply}</div></div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
